@@ -1,0 +1,5 @@
+juxtorpus>=0.2.7
+atap-corpus-slicer>=0.3.1
+holoviews~=1.19.1
+tmtoolkit~=0.12.0
+
