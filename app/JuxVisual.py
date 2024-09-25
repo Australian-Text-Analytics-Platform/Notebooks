@@ -20,7 +20,7 @@ def dtm2tfidf(dtm):
     
 def _wordcloud(corpus, max_words: int, metric: str, dtm_name: str, stopwords: list[str] = None):
     if stopwords is None: stopwords = list()
-    stopwords.extend(ENGLISH_STOP_WORDS)
+    # stopwords.extend(ENGLISH_STOP_WORDS)
     dtm_names = {'tokens', 'semtag', 'hashtag'}
     metrics = {'tf', 'tfidf'}
     assert dtm_name in dtm_names, f"{dtm_name} not in {', '.join(dtm_names)}"
@@ -240,7 +240,7 @@ def visualise_versions(corpora, corpus_name):
     return layout.servable()
 
 
-def visualise_jux(corpora: dict):# | CorpusLoader):
+def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     # Visualising Jux
     import panel as pn
     import panel.widgets as pnw
@@ -255,15 +255,36 @@ def visualise_jux(corpora: dict):# | CorpusLoader):
     
     # Dropdown for Corpus selection
     corpus_list = list(corpora.keys())
-    corpus_A_dropdown = pnw.Select(name='Corpus_A', options=corpus_list, value=corpus_list[0])
-    corpus_B_dropdown = pnw.Select(name='Corpus_B', options=corpus_list, value=corpus_list[1])
+    corpus_A_dropdown = pnw.Select(name='Corpus_A', options=corpus_list, value=corpus_list[0], width=210)
+    corpus_B_dropdown = pnw.Select(name='Corpus_B', options=corpus_list, value=corpus_list[1], width=210)
+    
 
     # Argument Set
     jux_methods = ['tf', 'tfidf', 'log_likelihood']
     method_dropdown = pnw.Select(name='Method', options=jux_methods, value=jux_methods[0], width=150)
-    wordNo_input = pnw.IntInput(name='Word Number', value=100, step=10, start=30, end=150, width=90)
+    wordNo_input = pnw.IntInput(name='Word Number', value=100, step=10, start=30, end=150, width=90, height=55)
     dtm_types = ['tokens']
     dtm_dropdown = pnw.Select(name='Type', options=dtm_types, value=dtm_types[0], width=150)
+    excl_words = set()
+    excl_choice = pnw.MultiChoice(name="Words to be excluded", options=list(excl_words), value=[], align="end", width=350, height=150)
+    excl_input = pnw.TextAreaInput(placeholder='Enter delimitered words to be excluded', height=120)
+
+    @pn.depends(excl_input, watch=True)
+    def update_choice(event):
+        if excl_input.value:
+            words = [w.lower() for w in re.split(';|,|\/|\s', excl_input.value) if w and (w not in excl_choice.options)]
+            # Union of selected multi-choice values and fixed stopwords
+            if words:
+                options = words + excl_choice.options
+                values = words + excl_choice.value
+                excl_choice.options = options
+                excl_choice.value = values
+            excl_input.value = ''
+
+    @pn.depends(excl_choice, watch=True)
+    def update_stopwords(event):
+        global stopwords
+        stopwords = list(set(fixed_stopwords).union(excl_choice.value))
 
     # Function to update dtm dropdown options based on selected corpora
     def update_dtm_dropdown(corpus_a_name, corpus_b_name):
@@ -274,11 +295,16 @@ def visualise_jux(corpora: dict):# | CorpusLoader):
 
     # Set initial values for dtm dropdown
     update_dtm_dropdown(corpus_A_dropdown.value, corpus_B_dropdown.value)
+    update_stopwords(excl_choice)
 
     # Watch changes to both corpus changes and update dtm dropdown accordingly
     corpus_A_dropdown.param.watch(lambda event: update_dtm_dropdown(event.new, corpus_B_dropdown.value), 'value')
     corpus_B_dropdown.param.watch(lambda event: update_dtm_dropdown(corpus_A_dropdown.value, event.new), 'value')
-        
+    
+    # Watch changes on the Stopwords choice and new inputs for stopwords
+    excl_choice.param.watch(update_stopwords, 'value')
+    excl_input.param.watch(update_choice, 'value_input')
+
     # Function to generate a word cloud from a dictionary and convert it to an RGB image
     def generate_wordcloud_image(corpus, metric: str = 'tf', max_words: int = 50, dtm_name: str = 'tokens',
                 stopwords: list[str] = None):
@@ -287,28 +313,28 @@ def visualise_jux(corpora: dict):# | CorpusLoader):
 
 
     # Function to generate word clouds based on the Corpus A selection
-    @pn.depends(corpus_A_dropdown.param.value, method_dropdown.param.value, wordNo_input.param.value, dtm_dropdown.param.value)
-    def display_wordcloud_A(selected_corpus, selected_method, selected_wordno, dtm_name):
+    @pn.depends(corpus_A_dropdown.param.value, method_dropdown.param.value, wordNo_input.param.value, dtm_dropdown.param.value, excl_choice.param.value)
+    def display_wordcloud_A(selected_corpus, selected_method, selected_wordno, dtm_name, stopwords):
         if selected_method not in ['tf', 'tfidf']: 
             selected_method = 'tf'
         # Generate word cloud images for both Corpus A
-        corpus_A_image = generate_wordcloud_image(corpora[selected_corpus], metric=selected_method, max_words=selected_wordno, dtm_name=dtm_name)
+        corpus_A_image = generate_wordcloud_image(corpora[selected_corpus], metric=selected_method, max_words=selected_wordno, dtm_name=dtm_name, stopwords=stopwords)
         # Create HoloViews elements for the word clouds
         corpus_A_cloud = hv.RGB(corpus_A_image).opts(title=f'Corpus A: {corpora[selected_corpus].name} -- {selected_method}', width=600, height=400)
         return corpus_A_cloud
 
-    @pn.depends(corpus_B_dropdown.param.value, method_dropdown.param.value, wordNo_input.param.value, dtm_dropdown.param.value)
-    def display_wordcloud_B(selected_corpus, selected_method, selected_wordno, dtm_name):
+    @pn.depends(corpus_B_dropdown.param.value, method_dropdown.param.value, wordNo_input.param.value, dtm_dropdown.param.value, excl_choice.param.value)
+    def display_wordcloud_B(selected_corpus, selected_method, selected_wordno, dtm_name, stopwords):
         if selected_method not in ['tf', 'tfidf']:
             selected_method = 'tf'
         # Generate word cloud images for both Corpus  B
-        corpus_B_image = generate_wordcloud_image(corpora[selected_corpus], metric=selected_method, max_words=selected_wordno, dtm_name=dtm_name)
+        corpus_B_image = generate_wordcloud_image(corpora[selected_corpus], metric=selected_method, max_words=selected_wordno, dtm_name=dtm_name, stopwords=stopwords)
         # Create HoloViews elements for the word clouds
         corpus_B_cloud = hv.RGB(corpus_B_image).opts(title=f'Corpus B: {corpora[selected_corpus].name} -- {selected_method}', width=600, height=400)
         return corpus_B_cloud
 
-    @pn.depends(corpus_A_dropdown.param.value, corpus_B_dropdown.param.value, method_dropdown.param.value, wordNo_input.param.value, dtm_dropdown.param.value)
-    def display_jux_wordcloud(corpus_a, corpus_b, selected_method, selected_wordno, dtm_name):
+    @pn.depends(corpus_A_dropdown.param.value, corpus_B_dropdown.param.value, method_dropdown.param.value, wordNo_input.param.value, dtm_dropdown.param.value, excl_choice.param.value)
+    def display_jux_wordcloud(corpus_a, corpus_b, selected_method, selected_wordno, dtm_name, stopwords):
         # Run Jux among selected corpora
         info = f"""
             <center>
@@ -320,7 +346,7 @@ def visualise_jux(corpora: dict):# | CorpusLoader):
         else:
             try:
                 jux = Jux(corpora[corpus_a], corpora[corpus_b])
-                pwc = jux.polarity.wordcloud(metric=selected_method, top=selected_wordno, dtm_names=dtm_name, return_wc=True)  # change this to 'tfidf' or 'log_likelihood'
+                pwc = jux.polarity.wordcloud(metric=selected_method, top=selected_wordno, dtm_names=dtm_name, stopwords=stopwords, return_wc=True)  # change this to 'tfidf' or 'log_likelihood'
                 # Create HoloViews elements for the word clouds
                 pwc_array = np.array(pwc.wc.to_image())
                 jux_cloud = hv.RGB(pwc_array).opts(title=f'Jux between Corpus "{corpus_a}" and Corpus "{corpus_b}" -- {selected_method}', width=800, height=500)
@@ -350,9 +376,13 @@ def visualise_jux(corpora: dict):# | CorpusLoader):
         return legend
 
     # Combine everything into a dashboard
-    layout = pn.Column(pn.Row(corpus_A_dropdown, corpus_B_dropdown, wordNo_input, method_dropdown, dtm_dropdown), 
+    layout = pn.Column(pn.Row(
+                        pn.Column(pn.Row(corpus_A_dropdown, corpus_B_dropdown), pn.Row( dtm_dropdown, method_dropdown, wordNo_input)),
+                        pn.layout.Divider(), excl_choice, excl_input), 
                     pn.Row(display_wordcloud_A, display_wordcloud_B), 
-                    pn.Row(display_jux_wordcloud, jux_legend))
+                    pn.Row(display_jux_wordcloud, jux_legend)
+                    )
+
 
     return layout.servable()
 
