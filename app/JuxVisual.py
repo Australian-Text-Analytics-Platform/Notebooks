@@ -323,7 +323,6 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
 
     @pn.depends(excl_choice, watch=True)
     def update_stopwords(event):
-        print('Stopwords updated.')
         global exclude_words
         exclude_words = list(set(fixed_stopwords).union(excl_choice.value))
 

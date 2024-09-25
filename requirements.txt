@@ -1,5 +1,5 @@
-juxtorpus>=0.2.7
+juxtorpus>=0.2.8
 atap-corpus-slicer>=0.3.1
 holoviews~=1.19.1
-tmtoolkit~=0.12.0
+#tmtoolkit~=0.12.0
 
