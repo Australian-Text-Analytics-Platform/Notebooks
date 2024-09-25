@@ -8,251 +8,272 @@ from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 import panel.widgets as pnw
 import re
 from functools import partial
+from juxtorpus.viz.corpus import dtm2tfidf, _wordcloud
 
 #from atap_corpus_loader import CorpusLoader
 
 hv.extension('bokeh')
 
-def dtm2tfidf(dtm):
-    tfidf_mat = tfidf(dtm.matrix)
-    freq = dict(zip(dtm.vocab(), sum(tfidf_mat.toarray())))
-    return freq
+# def dtm2tfidf(dtm):
+#     tfidf_mat = tfidf(dtm.matrix)
+#     freq = dict(zip(dtm.vocab(), sum(tfidf_mat.toarray())))
+#     return freq
     
-def _wordcloud(corpus, max_words: int, metric: str, dtm_name: str, stopwords: list[str] = None):
-    if stopwords is None: stopwords = list()
-    # stopwords.extend(ENGLISH_STOP_WORDS)
-    dtm_names = {'tokens', 'semtag', 'hashtag'}
-    metrics = {'tf', 'tfidf'}
-    assert dtm_name in dtm_names, f"{dtm_name} not in {', '.join(dtm_names)}"
-    assert metric in metrics, f"{metric} not in {', '.join(metrics)}"
-    wc = WordCloud(background_color='white', max_words=max_words, height=600, width=1200, stopwords=stopwords)
+# def _wordcloud(corpus, max_words: int, metric: str, dtm_name: str, stopwords: list[str] = None):
+#     if stopwords is None: stopwords = list()
+#     # stopwords.extend(ENGLISH_STOP_WORDS)
+#     dtm_names = {'tokens', 'semtag', 'hashtag'}
+#     metrics = {'tf', 'tfidf'}
+#     assert dtm_name in dtm_names, f"{dtm_name} not in {', '.join(dtm_names)}"
+#     assert metric in metrics, f"{metric} not in {', '.join(metrics)}"
+#     wc = WordCloud(background_color='white', max_words=max_words, height=600, width=1200, stopwords=stopwords)
 
+#     dtm = corpus.dtms[dtm_name]
+#     if dtm_name in corpus.dtms.keys():
+#         dtm = corpus.dtms[dtm_name]  # corpus dtm is always lower cased.
+#     with dtm.without_terms(stopwords) as dtm:
+#         if metric == 'tf':
+#             counter = dtm.freq_table().to_dict()
+#             wc.generate_from_frequencies(counter)
+#             return wc
+#         elif metric == 'tfidf':
+#             counter = dtm2tfidf(dtm)
+#             wc.generate_from_frequencies(counter)
+#             return wc
+#         else:
+#             raise ValueError(f"Metric {metric} is not supported. Must be one of {', '.join(metrics)}")
+
+# def visualise_versions(corpora, corpus_name):
+#     corpus = process_corpus(corpora, corpus_name)
+#     shorten_char = 500
+
+#     # Load the data
+#     df = corpus.to_dataframe()
+#     # Compute word sizes for newwords and rmwords
+#     df['add_token'] = df['add'].apply(lambda t: len(t.split(' ')))
+#     df['rm_token'] = df['rm'].apply(lambda t: -len(t.split(' ')))
+#     df['short_add'] = df['add'].str[:shorten_char] + np.where(df['add'].str.len() > shorten_char, '...', '')
+#     df['short_rm'] = df['rm'].str[:shorten_char] + np.where(df['rm'].str.len() > shorten_char, '...', '')
+#     # Convert the timestamp column to datetime
+#     df['timestamp'] = pd.to_datetime(df['timestamp'])
+#     df = df.sort_values(by="timestamp")
+
+#     x_range = (df['timestamp'].min(), df['timestamp'].max())
+
+#     # Dropdown for category selection
+#     category_dropdown = pnw.MultiSelect(name='Category', options=df['Category'].unique().tolist(), value=df['Category'].unique().tolist())
+
+#     # Define unique_sites and color_map
+#     unique_sites = sorted(df['site_hostname'].unique())
+#     color_map = {site: Category20c[20][i % 20] for i, site in enumerate(unique_sites)}
+
+#     # Compute the number of unique years in the dataset
+#     num_unique_years = len(df['timestamp'].dt.year.unique())
+
+
+#     # MultiSelect dropdown for site_hostname selection
+#     site_hostname_dropdown = pnw.MultiSelect(name='Websites', options=list(unique_sites), value=list(unique_sites), size=4)
+
+#     # Extract unique years from df
+#     unique_years = sorted(df['year'].unique())
+
+#     # Create a dropdown for year selection
+#     year_dropdown = pnw.MultiSelect(name='Year', options=unique_years, value=unique_years, size=4)  # default to all years
+
+
+#     # Function to update site_hostname dropdown options based on selected category
+#     def update_site_dropdown(category):
+#         relevant_sites = df[df['Category'].isin(category)]['site_hostname'].unique().tolist()
+#         site_hostname_dropdown.options = sorted(relevant_sites)
+#         site_hostname_dropdown.value = relevant_sites
+
+#     # Set initial values for site_hostname dropdown
+#     update_site_dropdown(category_dropdown.value)
+
+#     # Watch changes to category_dropdown and update site_hostname dropdown accordingly
+#     category_dropdown.param.watch(lambda event: update_site_dropdown(event.new), 'value')
+
+#     # Function to update year dropdown options based on selected category and sites
+#     def update_year_dropdown(category, sites):
+#         relevant_years = df[(df['Category'].isin(category)) & (df['site_hostname'].isin(sites))]['year'].unique().tolist()
+#         year_dropdown.options = sorted(relevant_years)
+#         year_dropdown.value = relevant_years
+
+#     # Watch changes to site_hostname_dropdown and update year_dropdown accordingly
+#     site_hostname_dropdown.param.watch(lambda event: update_year_dropdown(category_dropdown.value, event.new), 'value')
+
+#     # Set the initial values for year_dropdown
+#     update_year_dropdown(category_dropdown.value, site_hostname_dropdown.value)
+
+#     # Refactor the function to apply filtering on the original DataFrame directly and customize the tooltip
+#     @pn.depends(category_dropdown.param.value, site_hostname_dropdown.param.value, year_dropdown.param.value)
+#     def update_plot_with_custom_tooltip_refactored(selected_category, selected_sites, selected_year):
+#         # Filter data based on selected category and site_hostnames from the original DataFrame
+
+#         filtered_df = df[(df['Category'].isin(selected_category)) \
+#                            & (df['site_hostname'].isin(selected_sites)) \
+#                            & (df['year'].isin(selected_year))]
+
+#         # Define tooltips
+#         tooltips_newwords = [
+#             ("New Contents", "@short_add"),
+#             ("Time", "@timestamp{%Y-%m-%d}"),  # Adjusted format for timestamp
+#             ("Site", "@site_hostname")        
+#             ]
+
+#         tooltips_rmwords = [
+#             ("Removed Contents", "@short_rm"),
+#             ("Time", "@timestamp{%Y-%m-%d}"),  # Adjusted format for timestamp
+#             ("Site", "@site_hostname")
+#             ]
+
+#         # Bars for newwords with color mapping and custom tooltip
+#         bars_newwords = hv.Bars(
+#             filtered_df, kdims=['timestamp'], vdims=['add_token', 'short_add', 'site_hostname']
+#         ).opts(
+#             color=dim('site_hostname').categorize(color_map),
+#         tools=[HoverTool(tooltips=tooltips_newwords, formatters={'@timestamp': 'datetime'})]  # Explicitly format timestamp as datetime
+#         ).opts(
+#             xaxis='bottom',
+#             xformatter=FuncTickFormatter(code="return new Date(tick).getFullYear() + '-' + (new Date(tick).getMonth()+1).toString().padStart(2, '0');"),
+#             xrotation=45
+#             #xticks=YearsTicker(),
+#             #xlim=x_range
+#         )
+
+#         bars_rmwords = hv.Bars(
+#             filtered_df, kdims=['timestamp'], vdims=['rm_token', 'short_rm', 'site_hostname']
+#         ).opts(
+#             color=dim('site_hostname').categorize(color_map),
+#         tools=[HoverTool(tooltips=tooltips_rmwords, formatters={'@timestamp': 'datetime'})]  # Explicitly format timestamp as datetime
+#         ).opts(
+#             xaxis='bottom',
+#             xformatter=FuncTickFormatter(code="return new Date(tick).getFullYear() + '-' + (new Date(tick).getMonth()+1).toString().padStart(2, '0');"),
+#             xrotation=45
+#             #xticks=YearsTicker(),
+#             #xlim=x_range
+#         )
+
+
+#         # Overlay the two bar plots
+#         overlay_bars = (bars_newwords * bars_rmwords).opts(
+#             width=800, height=400, xlabel='Year', ylabel='Word Count Changes', show_legend=True
+#         ).opts(xlabel='Year')
+
+#         return overlay_bars
+
+#     # Function to generate a word cloud from a dictionary and convert it to an RGB image
+#     def generate_wordcloud_image(data_dict):
+#         if len(data_dict) > 1:
+#             wc = WordCloud(background_color='white').generate_from_frequencies(data_dict)
+#         else:
+#             wc = WordCloud(background_color='white').generate_from_frequencies({' ': 1})
+#         return np.array(wc.to_image())
+
+#     # Function to generate a combined word cloud from a DataFrame
+#     def generate_combined_wordcloud_image(df, column_name):
+#         combined_dict = Counter({})
+#         for index, row in df.iterrows():
+#             combined_dict.update(row[column_name])
+#         return generate_wordcloud_image(combined_dict), len(combined_dict.keys())
+
+#     # Function to generate word clouds based on the current filtered DataFrame
+#     @pn.depends(category_dropdown.param.value, site_hostname_dropdown.param.value, year_dropdown.param.value)
+#     def display_wordclouds(selected_category, selected_sites, selected_years):
+#         filtered_df = df[(df['Category'].isin(selected_category)) & (df['site_hostname'].isin(selected_sites)) & (df['year'].isin(selected_years))]
+
+#         # Generate word cloud images for newwords and rmwords
+#         newwords_image, newwords_no = generate_combined_wordcloud_image(filtered_df, 'newwords')
+#         rmwords_image, rmwords_no = generate_combined_wordcloud_image(filtered_df, 'rmwords')
+
+#         # Create HoloViews elements for the word clouds
+#         newwords_cloud = hv.RGB(newwords_image).opts(title=f'New Words: {newwords_no}', width=500, height=300)
+#         rmwords_cloud = hv.RGB(rmwords_image).opts(title=f'Removed Words: {rmwords_no}', width=500, height=300)
+
+#         return (newwords_cloud + rmwords_cloud).cols(1)
+
+#     # Combine everything into a dashboard
+#     layout = pn.Row(
+#         pn.Column(pn.Row(category_dropdown, site_hostname_dropdown, year_dropdown), update_plot_with_custom_tooltip_refactored),
+#         display_wordclouds
+#     )
+
+#     layout.servable()
+
+#     # Function to generate a word cloud from a dictionary and convert it to an RGB image
+#     def generate_wordcloud_image(data_dict):
+#         if len(data_dict) > 1:
+#             wc = WordCloud(background_color='white').generate_from_frequencies(data_dict)
+#         else:
+#             wc = WordCloud(background_color='white').generate_from_frequencies({' ': 1})
+#         return np.array(wc.to_image())
+
+#     # Function to generate a combined word cloud from a DataFrame
+#     def generate_combined_wordcloud_image(df, column_name):
+#         combined_dict = Counter({})
+#         for index, row in df.iterrows():
+#             combined_dict.update(row[column_name])
+#         return generate_wordcloud_image(combined_dict), len(combined_dict.keys())
+
+#     # Function to generate word clouds based on the current filtered DataFrame
+#     @pn.depends(category_dropdown.param.value, site_hostname_dropdown.param.value, year_dropdown.param.value)
+#     def display_wordclouds(selected_category, selected_sites, selected_years):
+#         filtered_df = df[(df['Category'].isin(selected_category)) & (df['site_hostname'].isin(selected_sites)) & (
+#             df['year'].isin(selected_years))]
+
+#         # Generate word cloud images for newwords and rmwords
+#         newwords_image, newwords_no = generate_combined_wordcloud_image(filtered_df, 'newwords')
+#         rmwords_image, rmwords_no = generate_combined_wordcloud_image(filtered_df, 'rmwords')
+
+#         # Create HoloViews elements for the word clouds
+#         newwords_cloud = hv.RGB(newwords_image).opts(title=f'New Words: {newwords_no}', width=500, height=300)
+#         rmwords_cloud = hv.RGB(rmwords_image).opts(title=f'Removed Words: {rmwords_no}', width=500, height=300)
+
+#         return (newwords_cloud + rmwords_cloud).cols(1)
+
+#     # Combine everything into a dashboard
+#     layout = pn.Row(
+#         pn.Column(pn.Row(category_dropdown, site_hostname_dropdown, year_dropdown),
+#                   update_plot_with_custom_tooltip_refactored),
+#         display_wordclouds
+#     )
+
+#     return layout.servable()
+# Visualising Jux
+import panel as pn
+import panel.widgets as pnw
+from juxtorpus import Jux
+# from juxtorpus.viz.corpus import _wordcloud
+from wordcloud import WordCloud
+import holoviews as hv
+import matplotlib.pyplot as plt
+import numpy as np
+
+def corpus_freq_list(corpus, dtm_name='tokens', metric='tf', stopwords: list[str] = None):
+    if not dtm_name in corpus.dtms.keys():
+        raise ValueError(f"DTM {dtm_name} does not exist. Must be one of {', '.join(corpus.dtms.keys())}.")
+    if stopwords is None: stopwords = list()
     dtm = corpus.dtms[dtm_name]
-    if dtm_name in corpus.dtms.keys():
-        dtm = corpus.dtms[dtm_name]  # corpus dtm is always lower cased.
     with dtm.without_terms(stopwords) as dtm:
         if metric == 'tf':
             counter = dtm.freq_table().to_dict()
-            wc.generate_from_frequencies(counter)
-            return wc
         elif metric == 'tfidf':
             counter = dtm2tfidf(dtm)
-            wc.generate_from_frequencies(counter)
-            return wc
         else:
-            raise ValueError(f"Metric {metric} is not supported. Must be one of {', '.join(metrics)}")
-
-def visualise_versions(corpora, corpus_name):
-    corpus = process_corpus(corpora, corpus_name)
-    shorten_char = 500
-
-    # Load the data
-    df = corpus.to_dataframe()
-    # Compute word sizes for newwords and rmwords
-    df['add_token'] = df['add'].apply(lambda t: len(t.split(' ')))
-    df['rm_token'] = df['rm'].apply(lambda t: -len(t.split(' ')))
-    df['short_add'] = df['add'].str[:shorten_char] + np.where(df['add'].str.len() > shorten_char, '...', '')
-    df['short_rm'] = df['rm'].str[:shorten_char] + np.where(df['rm'].str.len() > shorten_char, '...', '')
-    # Convert the timestamp column to datetime
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    df = df.sort_values(by="timestamp")
-
-    x_range = (df['timestamp'].min(), df['timestamp'].max())
-
-    # Dropdown for category selection
-    category_dropdown = pnw.MultiSelect(name='Category', options=df['Category'].unique().tolist(), value=df['Category'].unique().tolist())
-
-    # Define unique_sites and color_map
-    unique_sites = sorted(df['site_hostname'].unique())
-    color_map = {site: Category20c[20][i % 20] for i, site in enumerate(unique_sites)}
-
-    # Compute the number of unique years in the dataset
-    num_unique_years = len(df['timestamp'].dt.year.unique())
-
-
-    # MultiSelect dropdown for site_hostname selection
-    site_hostname_dropdown = pnw.MultiSelect(name='Websites', options=list(unique_sites), value=list(unique_sites), size=4)
-
-    # Extract unique years from df
-    unique_years = sorted(df['year'].unique())
-
-    # Create a dropdown for year selection
-    year_dropdown = pnw.MultiSelect(name='Year', options=unique_years, value=unique_years, size=4)  # default to all years
-
-
-    # Function to update site_hostname dropdown options based on selected category
-    def update_site_dropdown(category):
-        relevant_sites = df[df['Category'].isin(category)]['site_hostname'].unique().tolist()
-        site_hostname_dropdown.options = sorted(relevant_sites)
-        site_hostname_dropdown.value = relevant_sites
-
-    # Set initial values for site_hostname dropdown
-    update_site_dropdown(category_dropdown.value)
-
-    # Watch changes to category_dropdown and update site_hostname dropdown accordingly
-    category_dropdown.param.watch(lambda event: update_site_dropdown(event.new), 'value')
-
-    # Function to update year dropdown options based on selected category and sites
-    def update_year_dropdown(category, sites):
-        relevant_years = df[(df['Category'].isin(category)) & (df['site_hostname'].isin(sites))]['year'].unique().tolist()
-        year_dropdown.options = sorted(relevant_years)
-        year_dropdown.value = relevant_years
-
-    # Watch changes to site_hostname_dropdown and update year_dropdown accordingly
-    site_hostname_dropdown.param.watch(lambda event: update_year_dropdown(category_dropdown.value, event.new), 'value')
-
-    # Set the initial values for year_dropdown
-    update_year_dropdown(category_dropdown.value, site_hostname_dropdown.value)
-
-    # Refactor the function to apply filtering on the original DataFrame directly and customize the tooltip
-    @pn.depends(category_dropdown.param.value, site_hostname_dropdown.param.value, year_dropdown.param.value)
-    def update_plot_with_custom_tooltip_refactored(selected_category, selected_sites, selected_year):
-        # Filter data based on selected category and site_hostnames from the original DataFrame
-
-        filtered_df = df[(df['Category'].isin(selected_category)) \
-                           & (df['site_hostname'].isin(selected_sites)) \
-                           & (df['year'].isin(selected_year))]
-
-        # Define tooltips
-        tooltips_newwords = [
-            ("New Contents", "@short_add"),
-            ("Time", "@timestamp{%Y-%m-%d}"),  # Adjusted format for timestamp
-            ("Site", "@site_hostname")        
-            ]
-
-        tooltips_rmwords = [
-            ("Removed Contents", "@short_rm"),
-            ("Time", "@timestamp{%Y-%m-%d}"),  # Adjusted format for timestamp
-            ("Site", "@site_hostname")
-            ]
-
-        # Bars for newwords with color mapping and custom tooltip
-        bars_newwords = hv.Bars(
-            filtered_df, kdims=['timestamp'], vdims=['add_token', 'short_add', 'site_hostname']
-        ).opts(
-            color=dim('site_hostname').categorize(color_map),
-        tools=[HoverTool(tooltips=tooltips_newwords, formatters={'@timestamp': 'datetime'})]  # Explicitly format timestamp as datetime
-        ).opts(
-            xaxis='bottom',
-            xformatter=FuncTickFormatter(code="return new Date(tick).getFullYear() + '-' + (new Date(tick).getMonth()+1).toString().padStart(2, '0');"),
-            xrotation=45
-            #xticks=YearsTicker(),
-            #xlim=x_range
-        )
-
-        bars_rmwords = hv.Bars(
-            filtered_df, kdims=['timestamp'], vdims=['rm_token', 'short_rm', 'site_hostname']
-        ).opts(
-            color=dim('site_hostname').categorize(color_map),
-        tools=[HoverTool(tooltips=tooltips_rmwords, formatters={'@timestamp': 'datetime'})]  # Explicitly format timestamp as datetime
-        ).opts(
-            xaxis='bottom',
-            xformatter=FuncTickFormatter(code="return new Date(tick).getFullYear() + '-' + (new Date(tick).getMonth()+1).toString().padStart(2, '0');"),
-            xrotation=45
-            #xticks=YearsTicker(),
-            #xlim=x_range
-        )
-
-
-        # Overlay the two bar plots
-        overlay_bars = (bars_newwords * bars_rmwords).opts(
-            width=800, height=400, xlabel='Year', ylabel='Word Count Changes', show_legend=True
-        ).opts(xlabel='Year')
-
-        return overlay_bars
-
-    # Function to generate a word cloud from a dictionary and convert it to an RGB image
-    def generate_wordcloud_image(data_dict):
-        if len(data_dict) > 1:
-            wc = WordCloud(background_color='white').generate_from_frequencies(data_dict)
-        else:
-            wc = WordCloud(background_color='white').generate_from_frequencies({' ': 1})
-        return np.array(wc.to_image())
-
-    # Function to generate a combined word cloud from a DataFrame
-    def generate_combined_wordcloud_image(df, column_name):
-        combined_dict = Counter({})
-        for index, row in df.iterrows():
-            combined_dict.update(row[column_name])
-        return generate_wordcloud_image(combined_dict), len(combined_dict.keys())
-
-    # Function to generate word clouds based on the current filtered DataFrame
-    @pn.depends(category_dropdown.param.value, site_hostname_dropdown.param.value, year_dropdown.param.value)
-    def display_wordclouds(selected_category, selected_sites, selected_years):
-        filtered_df = df[(df['Category'].isin(selected_category)) & (df['site_hostname'].isin(selected_sites)) & (df['year'].isin(selected_years))]
-
-        # Generate word cloud images for newwords and rmwords
-        newwords_image, newwords_no = generate_combined_wordcloud_image(filtered_df, 'newwords')
-        rmwords_image, rmwords_no = generate_combined_wordcloud_image(filtered_df, 'rmwords')
-
-        # Create HoloViews elements for the word clouds
-        newwords_cloud = hv.RGB(newwords_image).opts(title=f'New Words: {newwords_no}', width=500, height=300)
-        rmwords_cloud = hv.RGB(rmwords_image).opts(title=f'Removed Words: {rmwords_no}', width=500, height=300)
-
-        return (newwords_cloud + rmwords_cloud).cols(1)
-
-    # Combine everything into a dashboard
-    layout = pn.Row(
-        pn.Column(pn.Row(category_dropdown, site_hostname_dropdown, year_dropdown), update_plot_with_custom_tooltip_refactored),
-        display_wordclouds
-    )
-
-    layout.servable()
-
-    # Function to generate a word cloud from a dictionary and convert it to an RGB image
-    def generate_wordcloud_image(data_dict):
-        if len(data_dict) > 1:
-            wc = WordCloud(background_color='white').generate_from_frequencies(data_dict)
-        else:
-            wc = WordCloud(background_color='white').generate_from_frequencies({' ': 1})
-        return np.array(wc.to_image())
-
-    # Function to generate a combined word cloud from a DataFrame
-    def generate_combined_wordcloud_image(df, column_name):
-        combined_dict = Counter({})
-        for index, row in df.iterrows():
-            combined_dict.update(row[column_name])
-        return generate_wordcloud_image(combined_dict), len(combined_dict.keys())
-
-    # Function to generate word clouds based on the current filtered DataFrame
-    @pn.depends(category_dropdown.param.value, site_hostname_dropdown.param.value, year_dropdown.param.value)
-    def display_wordclouds(selected_category, selected_sites, selected_years):
-        filtered_df = df[(df['Category'].isin(selected_category)) & (df['site_hostname'].isin(selected_sites)) & (
-            df['year'].isin(selected_years))]
-
-        # Generate word cloud images for newwords and rmwords
-        newwords_image, newwords_no = generate_combined_wordcloud_image(filtered_df, 'newwords')
-        rmwords_image, rmwords_no = generate_combined_wordcloud_image(filtered_df, 'rmwords')
-
-        # Create HoloViews elements for the word clouds
-        newwords_cloud = hv.RGB(newwords_image).opts(title=f'New Words: {newwords_no}', width=500, height=300)
-        rmwords_cloud = hv.RGB(rmwords_image).opts(title=f'Removed Words: {rmwords_no}', width=500, height=300)
-
-        return (newwords_cloud + rmwords_cloud).cols(1)
-
-    # Combine everything into a dashboard
-    layout = pn.Row(
-        pn.Column(pn.Row(category_dropdown, site_hostname_dropdown, year_dropdown),
-                  update_plot_with_custom_tooltip_refactored),
-        display_wordclouds
-    )
-
-    return layout.servable()
-
+            raise ValueError(f"Metric {metric} is not supported.")
+    counter = {k: v for k, v in sorted(counter.items(), key=lambda item: item[1], reverse=True)}
+    return counter
 
 def visualise_jux(corpora: dict, fixed_stopwords: list = []):
-    # Visualising Jux
-    import panel as pn
-    import panel.widgets as pnw
-    from juxtorpus import Jux
-    from wordcloud import WordCloud
-    import holoviews as hv
-    import matplotlib.pyplot as plt
-    import numpy as np
-
     if type(corpora) is not dict:
         corpora = corpora.get_corpora()
     
+    # global exclude_words
+    global choice_No
+    choice_No = 15
+
+    global exclude_words
+    exclude_words = fixed_stopwords
     # Dropdown for Corpus selection
     corpus_list = list(corpora.keys())
     corpus_A_dropdown = pnw.Select(name='Corpus_A', options=corpus_list, value=corpus_list[0], width=210)
@@ -262,29 +283,49 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     # Argument Set
     jux_methods = ['tf', 'tfidf', 'log_likelihood']
     method_dropdown = pnw.Select(name='Method', options=jux_methods, value=jux_methods[0], width=150)
-    wordNo_input = pnw.IntInput(name='Word Number', value=100, step=10, start=30, end=150, width=90, height=55)
+    wordNo_input = pnw.IntInput(name='Word Number', value=100, step=10, start=30, end=150, width=90)
     dtm_types = ['tokens']
+    
     dtm_dropdown = pnw.Select(name='Type', options=dtm_types, value=dtm_types[0], width=150)
     excl_words = set()
-    excl_choice = pnw.MultiChoice(name="Words to be excluded", options=list(excl_words), value=[], align="end", width=350, height=150)
-    excl_input = pnw.TextAreaInput(placeholder='Enter delimitered words to be excluded', height=120)
+    excl_choice = pnw.MultiChoice(name="Words to be excluded, click to select or type to filter from the top words", options=list(excl_words), value=[], align="end", width=500, height=120)
+    excl_input = pnw.TextAreaInput(placeholder='For specific word to be excluded, enter as delimitered text', width=200, height=120)
 
+    @pn.depends(corpus_A_dropdown.param.value, corpus_B_dropdown.param.value, method_dropdown.param.value, dtm_dropdown.param.value, watch=True)
+    def reset_choice(corpus_A_name, corpus_B_name, metric, dtm_name):
+        corpus_A = corpora[corpus_A_name]
+        corpus_B = corpora[corpus_B_name]
+        token_no = choice_No
+        freq_list_A = corpus_freq_list(corpus_A, 
+                                       dtm_name=dtm_name, 
+                                       metric=metric, 
+                                       stopwords = fixed_stopwords)
+        freq_list_B = corpus_freq_list(corpus_B, 
+                                       dtm_name=dtm_name, 
+                                       metric=metric, 
+                                       stopwords = fixed_stopwords)
+        
+        options = list(freq_list_A.keys())[:token_no] + list(freq_list_B.keys())[:token_no]
+        excl_choice.options = list(set(options))
+        excl_choice.value = []
+    
     @pn.depends(excl_input, watch=True)
     def update_choice(event):
         if excl_input.value:
-            words = [w.lower() for w in re.split(';|,|\/|\s', excl_input.value) if w and (w not in excl_choice.options)]
-            # Union of selected multi-choice values and fixed stopwords
+            words = [w for w in re.split(';|,|\/|\s', excl_input.value) if w and (w not in excl_choice.options)]
+            # Union of input words and existing choices/values
             if words:
-                options = words + excl_choice.options
-                values = words + excl_choice.value
-                excl_choice.options = options
-                excl_choice.value = values
+                new_options = words + list(excl_choice.options)
+                new_values = words + list(excl_choice.value)
+                excl_choice.options = new_options
+                excl_choice.value = new_values
             excl_input.value = ''
 
     @pn.depends(excl_choice, watch=True)
     def update_stopwords(event):
-        global stopwords
-        stopwords = list(set(fixed_stopwords).union(excl_choice.value))
+        print('Stopwords updated.')
+        global exclude_words
+        exclude_words = list(set(fixed_stopwords).union(excl_choice.value))
 
     # Function to update dtm dropdown options based on selected corpora
     def update_dtm_dropdown(corpus_a_name, corpus_b_name):
@@ -296,6 +337,7 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     # Set initial values for dtm dropdown
     update_dtm_dropdown(corpus_A_dropdown.value, corpus_B_dropdown.value)
     update_stopwords(excl_choice)
+    reset_choice(corpus_A_dropdown.value, corpus_B_dropdown.value, method_dropdown.value, dtm_dropdown.value)
 
     # Watch changes to both corpus changes and update dtm dropdown accordingly
     corpus_A_dropdown.param.watch(lambda event: update_dtm_dropdown(event.new, corpus_B_dropdown.value), 'value')
@@ -303,7 +345,7 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     
     # Watch changes on the Stopwords choice and new inputs for stopwords
     excl_choice.param.watch(update_stopwords, 'value')
-    excl_input.param.watch(update_choice, 'value_input')
+    # excl_input.param.watch(update_choice, 'value_input')
 
     # Function to generate a word cloud from a dictionary and convert it to an RGB image
     def generate_wordcloud_image(corpus, metric: str = 'tf', max_words: int = 50, dtm_name: str = 'tokens',
@@ -314,27 +356,27 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
 
     # Function to generate word clouds based on the Corpus A selection
     @pn.depends(corpus_A_dropdown.param.value, method_dropdown.param.value, wordNo_input.param.value, dtm_dropdown.param.value, excl_choice.param.value)
-    def display_wordcloud_A(selected_corpus, selected_method, selected_wordno, dtm_name, stopwords):
+    def display_wordcloud_A(selected_corpus, selected_method, selected_wordno, dtm_name, _):
         if selected_method not in ['tf', 'tfidf']: 
             selected_method = 'tf'
         # Generate word cloud images for both Corpus A
-        corpus_A_image = generate_wordcloud_image(corpora[selected_corpus], metric=selected_method, max_words=selected_wordno, dtm_name=dtm_name, stopwords=stopwords)
+        corpus_A_image = generate_wordcloud_image(corpora[selected_corpus], metric=selected_method, max_words=selected_wordno, dtm_name=dtm_name, stopwords=exclude_words)
         # Create HoloViews elements for the word clouds
         corpus_A_cloud = hv.RGB(corpus_A_image).opts(title=f'Corpus A: {corpora[selected_corpus].name} -- {selected_method}', width=600, height=400)
         return corpus_A_cloud
 
     @pn.depends(corpus_B_dropdown.param.value, method_dropdown.param.value, wordNo_input.param.value, dtm_dropdown.param.value, excl_choice.param.value)
-    def display_wordcloud_B(selected_corpus, selected_method, selected_wordno, dtm_name, stopwords):
+    def display_wordcloud_B(selected_corpus, selected_method, selected_wordno, dtm_name, _):
         if selected_method not in ['tf', 'tfidf']:
             selected_method = 'tf'
         # Generate word cloud images for both Corpus  B
-        corpus_B_image = generate_wordcloud_image(corpora[selected_corpus], metric=selected_method, max_words=selected_wordno, dtm_name=dtm_name, stopwords=stopwords)
+        corpus_B_image = generate_wordcloud_image(corpora[selected_corpus], metric=selected_method, max_words=selected_wordno, dtm_name=dtm_name, stopwords=exclude_words)
         # Create HoloViews elements for the word clouds
         corpus_B_cloud = hv.RGB(corpus_B_image).opts(title=f'Corpus B: {corpora[selected_corpus].name} -- {selected_method}', width=600, height=400)
         return corpus_B_cloud
 
     @pn.depends(corpus_A_dropdown.param.value, corpus_B_dropdown.param.value, method_dropdown.param.value, wordNo_input.param.value, dtm_dropdown.param.value, excl_choice.param.value)
-    def display_jux_wordcloud(corpus_a, corpus_b, selected_method, selected_wordno, dtm_name, stopwords):
+    def display_jux_wordcloud(corpus_a, corpus_b, selected_method, selected_wordno, dtm_name, _):
         # Run Jux among selected corpora
         info = f"""
             <center>
@@ -346,7 +388,7 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         else:
             try:
                 jux = Jux(corpora[corpus_a], corpora[corpus_b])
-                pwc = jux.polarity.wordcloud(metric=selected_method, top=selected_wordno, dtm_names=dtm_name, stopwords=stopwords, return_wc=True)  # change this to 'tfidf' or 'log_likelihood'
+                pwc = jux.polarity.wordcloud(metric=selected_method, top=selected_wordno, dtm_names=dtm_name, stopwords=exclude_words, return_wc=True)  # change this to 'tfidf' or 'log_likelihood'
                 # Create HoloViews elements for the word clouds
                 pwc_array = np.array(pwc.wc.to_image())
                 jux_cloud = hv.RGB(pwc_array).opts(title=f'Jux between Corpus "{corpus_a}" and Corpus "{corpus_b}" -- {selected_method}', width=800, height=500)
