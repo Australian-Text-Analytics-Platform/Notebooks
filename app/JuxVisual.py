@@ -31,12 +31,10 @@ def corpus_freq_list(corpus, dtm_name='tokens', metric='tf', stopwords: list[str
     if stopwords is None: stopwords = list()
     dtm = corpus.dtms[dtm_name]
     with dtm.without_terms(stopwords) as dtm:
-        if metric == 'tf':
-            counter = dtm.freq_table().to_dict()
-        elif metric == 'tfidf':
+        if metric == 'tfidf':
             counter = dtm2tfidf(dtm)
         else:
-            raise ValueError(f"Metric {metric} is not supported.")
+            counter = dtm.freq_table().to_dict()
     counter = {k: v for k, v in sorted(counter.items(), key=lambda item: item[1], reverse=True)}
     return counter
 
