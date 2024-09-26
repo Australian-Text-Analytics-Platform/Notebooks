@@ -105,7 +105,7 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
             if words.intersection(excl_choice.options):
                 new_options = list(words.union(excl_choice.options))
                 excl_choice.options = new_options
-            if words.intersection(excl_choice.value)
+            if words.intersection(excl_choice.value):
                 new_values = list(words.union(excl_choice.value))
                 excl_choice.value = new_values
             excl_input.value = ''
