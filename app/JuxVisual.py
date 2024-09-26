@@ -124,6 +124,7 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     def generate_wordcloud_image(corpus, metric: str = 'tf', max_words: int = 50, dtm_name: str = 'tokens',
                 stopwords: list[str] = None):
         wc = _wordcloud(corpus, metric = metric, max_words = max_words, dtm_name = dtm_name, stopwords = stopwords)
+        plt.axis("off")
         return np.array(wc.to_image())
 
     # Function to generate word clouds based on the Corpus selection
@@ -140,7 +141,10 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
                                                   dtm_name=dtm_dropdown.value, 
                                                   stopwords=exclude_words)
         # Create HoloViews elements for the word clouds
-        corpus_wc = hv.RGB(corpus_wc_image).opts(title=f'Corpus A: {corpora[corpus_name].name} -- {selected_method}', width=600, height=400)
+        corpus_wc = hv.RGB(corpus_wc_image).opts(
+            title=f'Corpus A: {corpora[corpus_name].name} -- {selected_method}', 
+            width=600, height=400,
+            xaxis=None, yaxis=None)
         return corpus_wc
 
     def display_jux_wordcloud():
@@ -163,7 +167,10 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
                 pwc = jux.polarity.wordcloud(metric=selected_method, top=selected_wordno, dtm_names=dtm_name, stopwords=exclude_words, return_wc=True)  # change this to 'tfidf' or 'log_likelihood'
                 # Create HoloViews elements for the word clouds
                 pwc_array = np.array(pwc.wc.to_image())
-                jux_cloud = hv.RGB(pwc_array).opts(title=f'Jux between Corpus "{corpus_a}" and Corpus "{corpus_b}" -- {selected_method}', width=800, height=500)
+                jux_cloud = hv.RGB(pwc_array).opts(
+                    title=f'Jux between Corpus "{corpus_a}" and Corpus "{corpus_b}" -- {selected_method}', 
+                    width=800, height=500,
+                    xaxis=None, yaxis=None)
             except ValueError:
                 jux_cloud = pn.pane.Markdown(info, width=700, height=200)
         return jux_cloud   
