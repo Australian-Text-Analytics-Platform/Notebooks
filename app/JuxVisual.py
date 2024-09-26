@@ -128,44 +128,23 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         wc = _wordcloud(corpus, metric = metric, max_words = max_words, dtm_name = dtm_name, stopwords = stopwords)
         return np.array(wc.to_image())
 
-
-    # Function to generate word clouds based on the Corpus A selection
-    # @pn.depends(corpus_A_dropdown.param.value, method_dropdown.param.value, wordNo_input.param.value, dtm_dropdown.param.value, excl_choice.param.value)
-    def display_wordcloud_A():
-        corpus = corpora[corpus_A_dropdown.value]
+    # Function to generate word clouds based on the Corpus selection
+    def display_wordcloud(corpus_name):
+        corpus = corpora[corpus_name]
         selected_method = method_dropdown.value
-        print(selected_method)
 
         if selected_method not in ['tf', 'tfidf']: 
             selected_method = 'tf'
-        # Generate word cloud images for both Corpus A
-        corpus_A_image = generate_wordcloud_image(corpus, 
+        # Generate word cloud images for selected Corpus
+        corpus_wc_image = generate_wordcloud_image(corpus, 
                                                   metric=selected_method, 
                                                   max_words=wordNo_input.value, 
                                                   dtm_name=dtm_dropdown.value, 
                                                   stopwords=exclude_words)
         # Create HoloViews elements for the word clouds
-        corpus_A_cloud = hv.RGB(corpus_A_image).opts(title=f'Corpus A: {corpora[corpus_A_dropdown.value].name} -- {selected_method}', width=600, height=400)
-        return corpus_A_cloud
+        corpus_wc = hv.RGB(corpus_wc_image).opts(title=f'Corpus A: {corpora[corpus_name].name} -- {selected_method}', width=600, height=400)
+        return corpus_wc
 
-    # @pn.depends(corpus_B_dropdown.param.value, method_dropdown.param.value, wordNo_input.param.value, dtm_dropdown.param.value, excl_choice.param.value)
-    def display_wordcloud_B():
-        corpus = corpora[corpus_B_dropdown.value]
-        selected_method = method_dropdown.value
-
-        if selected_method not in ['tf', 'tfidf']: 
-            selected_method = 'tf'
-        # Generate word cloud images for Corpus B
-        corpus_B_image = generate_wordcloud_image(corpus, 
-                                                  metric=selected_method, 
-                                                  max_words=wordNo_input.value, 
-                                                  dtm_name=dtm_dropdown.value, 
-                                                  stopwords=exclude_words)
-        # Create HoloViews elements for the word clouds
-        corpus_B_cloud = hv.RGB(corpus_B_image).opts(title=f'Corpus A: {corpora[corpus_B_dropdown.value].name} -- {selected_method}', width=600, height=400)
-        return corpus_B_cloud
-
-    # @pn.depends(corpus_A_dropdown.param.value, corpus_B_dropdown.param.value, method_dropdown.param.value, wordNo_input.param.value, dtm_dropdown.param.value, excl_choice.param.value)
     def display_jux_wordcloud():
         corpus_a = corpus_A_dropdown.value
         corpus_b = corpus_B_dropdown.value
@@ -192,7 +171,6 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         return jux_cloud   
         
     # Define the Jux legend text
-    # @pn.depends(corpus_A_dropdown.param.value, corpus_B_dropdown.param.value, method_dropdown.param.value)
     def jux_legend():
         corpus_a_name = corpora[corpus_A_dropdown.value].name
         corpus_b_name = corpora[corpus_B_dropdown.value].name
@@ -216,8 +194,8 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
 
     def refresh(event):
         refresh_btn.disabled = True
-        wordcloud_A.object = display_wordcloud_A()
-        wordcloud_B.object = display_wordcloud_B()
+        wordcloud_A.object = display_wordcloud(corpus_A_dropdown.value)
+        wordcloud_B.object = display_wordcloud(corpus_B_dropdown.value)
         wordcloud_Jux.object = display_jux_wordcloud()
         jux_Legend.object = jux_legend()
         refresh_btn.disabled = False
