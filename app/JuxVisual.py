@@ -62,9 +62,9 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
 
     excl_words = set()
     excl_choice = pnw.MultiChoice(name="Words to be excluded, click to select or type to filter from the top words", options=list(excl_words), value=[], align="end", width=500, height=120)
-    excl_input = pnw.TextAreaInput(placeholder='For specific word to be excluded, enter as delimitered text', width=200, height=90)
+    excl_input = pnw.TextAreaInput(placeholder='For specific word to be excluded, enter as delimitered text', width=200, height=80)
 
-    refresh_btn = pnw.Button(name='Process')
+    refresh_btn = pnw.Button(name="Process", button_type="success", button_style="solid", align="end")
 
     wordcloud_A = pn.pane.HoloViews()
     wordcloud_B = pn.pane.HoloViews()
@@ -209,10 +209,10 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
 
     # Combine everything into a dashboard
     layout = pn.Column(pn.Row(
-                        pn.Column(pn.Row(corpus_A_dropdown, corpus_B_dropdown), pn.Row( dtm_dropdown, method_dropdown, wordNo_input)),
-                        pn.layout.Divider(), 
-                        excl_choice, 
-                        pn.Column(excl_input, refresh_btn)), 
+                        pn.Column(pn.Row(corpus_A_dropdown, corpus_B_dropdown), pn.Row(dtm_dropdown, method_dropdown, wordNo_input)),
+                        pn.layout.Divider(),
+                        pn.Column(excl_input, refresh_btn), 
+                        excl_choice),
                     pn.Row(wordcloud_A, wordcloud_B), 
                     pn.Row(wordcloud_Jux, jux_Legend)
                     )
