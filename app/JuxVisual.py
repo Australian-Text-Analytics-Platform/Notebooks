@@ -164,7 +164,7 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         dtm_name = dtm_dropdown.value
         # Run Jux among selected corpora
         if corpus_a == corpus_b:
-            jux_cloud = pn.pane.Markdown(info, width=700, height=200)
+            jux_cloud = jux_error_img
         else:
             try:
                 jux = Jux(corpora[corpus_a], corpora[corpus_b])
