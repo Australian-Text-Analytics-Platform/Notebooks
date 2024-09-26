@@ -41,6 +41,14 @@ def corpus_freq_list(corpus, dtm_name='tokens', metric='tf', stopwords: list[str
 def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     if type(corpora) is not dict:
         corpora = corpora.get_corpora()
+
+    jux_error = np.load('./app/jux_error_msg.npz')['message']
+    jux_error_img = hv.RGB(jux_error).opts(
+        width=jux_error.shape[1], 
+        height=jux_error.shape[0], 
+        xaxis=None, 
+        yaxis=None
+        )
     
     # Argument Set
     jux_methods = ['tf', 'tfidf', 'log_likelihood']
@@ -147,18 +155,13 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
             xaxis=None, yaxis=None)
         return corpus_wc
 
-    def display_jux_wordcloud():
+    def display_jux_wordcloud(jux_error_img):
         corpus_a = corpus_A_dropdown.value
         corpus_b = corpus_B_dropdown.value
         selected_method = method_dropdown.value
         selected_wordno = wordNo_input.value
         dtm_name = dtm_dropdown.value
         # Run Jux among selected corpora
-        info = f"""
-            <center>
-            ### Jux can not compare corpora that are identical or very balanced in distribution.
-            </center>
-            """
         if corpus_a == corpus_b:
             jux_cloud = pn.pane.Markdown(info, width=700, height=200)
         else:
@@ -172,7 +175,7 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
                     width=800, height=500,
                     xaxis=None, yaxis=None)
             except ValueError:
-                jux_cloud = pn.pane.Markdown(info, width=700, height=200)
+                jux_cloud = jux_error_img
         return jux_cloud   
         
     # Define the Jux legend text
@@ -201,7 +204,7 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         refresh_btn.disabled = True
         wordcloud_A.object = display_wordcloud(corpus_A_dropdown.value)
         wordcloud_B.object = display_wordcloud(corpus_B_dropdown.value)
-        wordcloud_Jux.object = display_jux_wordcloud()
+        wordcloud_Jux.object = display_jux_wordcloud(jux_error_img)
         jux_Legend.object = jux_legend()
         refresh_btn.disabled = False
 
