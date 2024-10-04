@@ -61,8 +61,8 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     
     # Dropdown for Corpus selection
     corpus_list = list(corpora.keys())
-    corpus_A_dropdown = pnw.Select(name='Corpus_A', options=corpus_list, value=corpus_list[-2], width=210)
-    corpus_B_dropdown = pnw.Select(name='Corpus_B', options=corpus_list, value=corpus_list[-1], width=210)
+    corpus_A_dropdown = pnw.Select(name='Target_Corpus', options=corpus_list, value=corpus_list[-2], width=210)
+    corpus_B_dropdown = pnw.Select(name='Reference_Corpus', options=corpus_list, value=corpus_list[-1], width=210)
     
     method_dropdown = pnw.Select(name='Method', options=jux_methods, value=jux_methods[0], width=150)
     wordNo_input = pnw.IntInput(name='Word Number', value=100, step=10, start=30, end=150, width=90)
@@ -78,6 +78,10 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     wordcloud_B = pn.pane.HoloViews()
     wordcloud_Jux = pn.pane.HoloViews()
     jux_Legend = pn.pane.Markdown(width=400)
+
+    download_A = pnw.Button(name='Target Corpus FreqList')
+    download_B = pnw.Button(name='Reference Corpus FreqList')
+    download_KW = pnw.Button(name='Keyword Analysis Outcome', align="center")
 
     @pn.depends(corpus_A_dropdown.param.value, corpus_B_dropdown.param.value, method_dropdown.param.value, dtm_dropdown.param.value, watch=True)
     def reset_choice(corpus_A_name, corpus_B_name, metric, dtm_name):
@@ -151,7 +155,7 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
                                                   stopwords=exclude_words)
         # Create HoloViews elements for the word clouds
         corpus_wc = hv.RGB(corpus_wc_image).opts(
-            title=f'Corpus A: {corpora[corpus_name].name} -- {selected_method}', 
+            title=f'Corpus: {corpora[corpus_name].name} -- {selected_method}', 
             width=600, height=400,
             xaxis=None, yaxis=None)
         return corpus_wc
@@ -172,12 +176,12 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
                 # Create HoloViews elements for the word clouds
                 pwc_array = np.array(pwc.wc.to_image())
                 jux_cloud = hv.RGB(pwc_array).opts(
-                    title=f'Jux between Corpus "{corpus_a}" and Corpus "{corpus_b}" -- {selected_method}', 
+                    title=f'Jux between Target Corpus "{corpus_a}" and Reference Corpus "{corpus_b}" -- {selected_method}', 
                     width=800, height=500,
                     xaxis=None, yaxis=None)
             except ValueError:
                 jux_cloud = jux_error_img
-        return jux_cloud   
+        return jux_cloud
         
     # Define the Jux legend text
     def jux_legend():
@@ -192,8 +196,8 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
                     }
         legend_text = f"""
         <span style='font-size:18px;'>     
-        <span style='color:blue'>Blue Words</span>:  Corpus -- **{corpus_a_name}** <br>
-        <span style='color:red'>Red Words</span>: Corpus -- **{corpus_b_name}** <br>
+        <span style='color:blue'>Blue Words</span>:  Target Corpus -- **{corpus_a_name}** <br>
+        <span style='color:red'>Red Words</span>: Reference Corpus -- **{corpus_b_name}** <br>
         Size: {legend_texts[method]['size']} <br>
         Solid: {legend_texts[method]['solid']} <br>
         Translucent: {legend_texts[method]['translucent']}
@@ -208,6 +212,15 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         wordcloud_Jux.object = display_jux_wordcloud(jux_error_img)
         jux_Legend.object = jux_legend()
         refresh_btn.disabled = False
+
+    def wc2freq(event, corpus_name):
+        freq_list = corpus_freq_list(corpora[corpus_name], 
+                                       dtm_name=dtm_dropdown.value, 
+                                       metric=method_dropdown.value, 
+                                       stopwords = exclude_words)
+        
+
+
 
     refresh_btn.on_click(refresh)
     refresh(True)
@@ -225,12 +238,39 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
                         pn.Column(excl_input, refresh_btn), 
                         excl_choice),
                     pn.Row(wordcloud_A, wordcloud_B), 
-                    pn.Row(wordcloud_Jux, jux_Legend)
+                    pn.Row(wordcloud_Jux, 
+                           pn.Column(jux_Legend,
+                                     pn.Row(download_A, download_B), 
+                                     download_KW)
+                        )
                     )
-    return layout.servable()
+    return layout
+
+# Functions for Freq_list display and downloads
+
+# # Recursive function to search through the layout for a widget by its type and name
+# def find_widget_by_name(root, widget_name):
+#     if root.name == widget_name:
+#         return root
+#     if isinstance(root, (pn.layout.Panel, list)):  # Check if it's a container
+#         for component in root:
+#             result = find_widget_by_name(component, widget_name)
+#             if result is not None:
+#                 print(result.value)
+#                 return result
+#     return None
+
+# def find_widget_value_by_name(root, widget_name):
+#     widget =  find_widget_by_name(root, widget_name)
+#     if widget:
+#         return widget.value
+#     else:
+#         return None
+
+
+
 
 # Semtag needed functions
-
 def load_usas_dict(usas_def_file):
     # get usas_tags definition
     #usas_def_file = './documents/semtags_subcategories.txt'
