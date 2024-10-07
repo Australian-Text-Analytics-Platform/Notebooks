@@ -1,4 +1,4 @@
-juxtorpus>=0.2.9
+juxtorpus>=0.3.1
 atap-corpus-slicer>=0.3.5
 atap-corpus-loader>=1.7.5
 holoviews~=1.19.1
