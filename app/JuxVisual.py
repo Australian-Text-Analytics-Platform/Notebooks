@@ -73,12 +73,12 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     wordcloud_Jux = pn.pane.HoloViews()
     jux_Legend = pn.pane.Markdown(width=400)
     
-    freq_A = pnw.Tabulator(pd.DataFrame(), name='FreqList_Targ', height=350, width=330, show_index=False)
-    freq_B = pnw.Tabulator(pd.DataFrame(), name='FreqList_Ref', height=350, width=330, show_index=False)
-    kw_pane = pnw.Tabulator(pd.DataFrame(), name='KeywordAnalysis', height=350, width=850, visible=False, show_index=False, align="center")
-    # freq_A = pn.pane.DataFrame(pd.DataFrame(), name='FreqList_Targ', height=350, width=330, index=False)
-    # freq_B = pn.pane.DataFrame(pd.DataFrame(), name='FreqList_Ref', height=350, width=330, index=False)
-    # kw_pane = pn.pane.DataFrame(pd.DataFrame(), name='KeywordAnalysis', height=350, width=550, visible=False, index=False, header=True, align="center")
+    # freq_A = pnw.Tabulator(pd.DataFrame(), name='FreqList_Targ', height=350, width=330, show_index=False)
+    # freq_B = pnw.Tabulator(pd.DataFrame(), name='FreqList_Ref', height=350, width=330, show_index=False)
+    # kw_pane = pnw.Tabulator(pd.DataFrame(), name='KeywordAnalysis', height=350, width=850, visible=False, show_index=False, align="center")
+    freq_A = pn.pane.DataFrame(pd.DataFrame(), name='FreqList_Targ', height=350, width=330, index=False)
+    freq_B = pn.pane.DataFrame(pd.DataFrame(), name='FreqList_Ref', height=350, width=330, index=False)
+    kw_pane = pn.pane.DataFrame(pd.DataFrame(), name='KeywordAnalysis', height=350, width=550, visible=False, index=False, header=True, align="center")
 
 
     @pn.depends(corpus_A_dropdown.param.value, corpus_B_dropdown.param.value, method_dropdown.param.value, dtm_dropdown.param.value, watch=True)
@@ -217,9 +217,9 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         csv_object.seek(0)
         return csv_object
 
-    download_A = pnw.FileDownload(callback=pn.bind(export_csv, freq_A), filename= corpus_A_dropdown.value + '_FreqTable.csv')
-    download_B = pnw.FileDownload(callback=pn.bind(export_csv, freq_B), filename= corpus_B_dropdown.value + '_FreqTable.csv')
-    download_KW = pnw.FileDownload(callback=pn.bind(export_csv, kw_pane), filename=corpus_A_dropdown.value + '_vs_' + corpus_B_dropdown.value + '_' + 'keyword_analysis.csv')
+    download_A = pnw.FileDownload(callback=pn.bind(export_csv, freq_A.object), filename= corpus_A_dropdown.value + '_FreqTable.csv')
+    download_B = pnw.FileDownload(callback=pn.bind(export_csv, freq_B.object), filename= corpus_B_dropdown.value + '_FreqTable.csv')
+    download_KW = pnw.FileDownload(callback=pn.bind(export_csv, kw_pane.object), filename=corpus_A_dropdown.value + '_vs_' + corpus_B_dropdown.value + '_' + 'keyword_analysis.csv')
         
 
     def refresh(event):
@@ -229,15 +229,15 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         wordcloud_Jux.object = display_jux_wordcloud(jux_error_img)
         jux_Legend.object = jux_legend()
         
-        freq_A.value = freq_dfs[corpus_A_dropdown.value]
-        freq_B.value = freq_dfs[corpus_B_dropdown.value]
-        # freq_A.object = freq_dfs[corpus_A_dropdown.value]
-        # freq_B.object = freq_dfs[corpus_B_dropdown.value]
+        # freq_A.value = freq_dfs[corpus_A_dropdown.value]
+        # freq_B.value = freq_dfs[corpus_B_dropdown.value]
+        freq_A.object = freq_dfs[corpus_A_dropdown.value]
+        freq_B.object = freq_dfs[corpus_B_dropdown.value]
         if method_dropdown.value == 'log_likelihood':
             download_KW.visible = True
             kw_pane.visible = True
-            # kw_pane.object = freq_dfs['kw_analysis']
-            kw_pane.value = freq_dfs['kw_analysis']
+            kw_pane.object = freq_dfs['kw_analysis']
+            # kw_pane.value = freq_dfs['kw_analysis']
         else:
             download_KW.visible = False
             kw_pane.visible = False
