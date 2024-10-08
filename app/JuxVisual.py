@@ -1,31 +1,16 @@
-from juxtorpus import Jux
-from wordcloud import WordCloud
-import holoviews as hv
-import matplotlib.pyplot as plt
-import numpy as np
-from tmtoolkit.bow.bow_stats import tfidf
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
-import re
-from functools import partial
-from juxtorpus.viz.corpus import _wordcloud
-import pandas as pd
-from tmtoolkit.bow.bow_stats import tfidf as bow_tfidf
-
-#from atap_corpus_loader import CorpusLoader
-
-hv.extension('bokeh')
-
-
 # Visualising Jux
+from juxtorpus import Jux
 import panel as pn
 import panel.widgets as pnw
-from panel.layout import Panel
-from juxtorpus import Jux
-# from juxtorpus.viz.corpus import _wordcloud
-from wordcloud import WordCloud
 import holoviews as hv
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+import re
+from juxtorpus.viz.corpus import _wordcloud
+from io import BytesIO
+from tmtoolkit.bow.bow_stats import tfidf as bow_tfidf
 
 
 
@@ -97,9 +82,6 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     # freq_B = pn.pane.DataFrame(pd.DataFrame(), name='FreqList_Ref', height=350, width=330, index=False)
     # kw_pane = pn.pane.DataFrame(pd.DataFrame(), name='KeywordAnalysis', height=350, width=550, visible=False, index=False, header=True, align="center")
 
-    download_A = pnw.Button(name='Target Corpus FreqList')
-    download_B = pnw.Button(name='Reference Corpus FreqList')
-    download_KW = pnw.Button(name='Keyword Analysis Outcome', align="center")
 
     @pn.depends(corpus_A_dropdown.param.value, corpus_B_dropdown.param.value, method_dropdown.param.value, dtm_dropdown.param.value, watch=True)
     def reset_choice(corpus_A_name, corpus_B_name, metric, dtm_name):
@@ -191,7 +173,10 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
             try:
                 jux = Jux(corpora[corpus_a], corpora[corpus_b])
                 pwc, kw_df = jux.polarity.wordcloud(metric=selected_method, top=selected_wordno, dtm_names=dtm_name, stopwords=exclude_words, return_wc=True)  # change this to 'tfidf' or 'log_likelihood'
-                freq_dfs['kw_analysis'] = kw_df.drop(columns=['summed', 'polarity_div_summed'])
+                if method_dropdown.value == 'log_likelihood':
+                    freq_dfs['kw_analysis'] = kw_df.drop(columns=['summed', 'polarity_div_summed'])
+                else:
+                    freq_dfs['kw_analysis'] = kw_df
                 # Create HoloViews elements for the word clouds
                 pwc_array = np.array(pwc.wc.to_image())
                 jux_cloud = hv.RGB(pwc_array).opts(
@@ -225,20 +210,19 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         """
         return legend_text
 
-    def export_Freq_A(event):
-        df = freq_A.value
-        filename = corpus_A_dropdown.value + '_' + method_dropdown.value + '.csv' 
-        df.to_csv(filename, index=False)
 
-    def export_Freq_B(table, corpus_name):
-        df = freq_B.value
-        filename = corpus_B_dropdown.value + '_' + method_dropdown.value + '.csv' 
-        df.to_csv(filename, index=False)
+    def export_csv(df):
+        csv_object = BytesIO()
+        print(df.shape)
+        if df.shape[0] == 0:
+            return csv_object
+        df.to_csv(csv_object, mode='w', index=False)
+        csv_object.seek(0)
+        return csv_object
 
-    def export_Jux(event):
-        df = kw_pane.value
-        filename = corpus_A_dropdown.value + '_vs_' + corpus_B_dropdown.value + '_' + method_dropdown.value + '.csv'
-        df.to_csv(filename, index=False)
+    download_A = pnw.FileDownload(callback=pn.bind(export_csv, freq_A), filename= corpus_A_dropdown.value + '_FreqTable.csv')
+    download_B = pnw.FileDownload(callback=pn.bind(export_csv, freq_B), filename= corpus_B_dropdown.value + '_FreqTable.csv')
+    download_KW = pnw.FileDownload(callback=pn.bind(export_csv, kw_pane), filename=corpus_A_dropdown.value + '_vs_' + corpus_B_dropdown.value + '_' + 'keyword_analysis.csv')
         
 
     def refresh(event):
@@ -260,9 +244,6 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         refresh_btn.disabled = False
 
     refresh_btn.on_click(refresh)
-    download_A.on_click(export_Freq_A)
-    download_B.on_click(export_Freq_B)
-    download_KW.on_click(export_Jux)
     
 
     # Set initial values for dtm dropdown
