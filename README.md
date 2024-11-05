@@ -8,5 +8,5 @@ Guides for using these tools can be found from the linked Github repos.
 
 Start this notebok on ATAP Binderhub from the following link, a valid Australian Access Federation login is needed:
 
-[![Binder](https://binderhub.atap-binder.cloud.edu.au/badge_logo.svg)](https://binderhub.atap-binder.cloud.edu.au/v2/gh/Australian-Text-Analytics-Platform/Notebooks/Juxtorpus-dev?labpath=Juxtorpus-Demo.ipynb)
+[![Binder](https://binderhub.atap-binder.cloud.edu.au/badge_logo.svg)](https://binderhub.atap-binder.cloud.edu.au/v2/gh/Australian-Text-Analytics-Platform/Notebooks/docker_test?labpath=Juxtorpus-Demo.ipynb)
 
