@@ -493,4 +493,4 @@ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.4.1
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.4.1/en_core_web_sm-3.4.1.tar.gz#egg=en_core_web_sm==3.4.1
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
-https://github.com/Australian-Text-Analytics-Platform/atap-context-extractor.git#egg=atap-context-extractor
+git+https://github.com/Australian-Text-Analytics-Platform/atap-context-extractor.git@main#egg=atap-context-extractor
