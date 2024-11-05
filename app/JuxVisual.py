@@ -208,38 +208,37 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         """
         return legend_text
 
-
-    def export_csv(df):
-        # For tabulator
-        csv_object = BytesIO()
-        if df.shape[0] == 0:
-            return csv_object
-        df.to_csv(csv_object, mode='w', index=False)
-        csv_object.seek(0)
-        return csv_object
-
-    # def export_csv(fl_type):
-    #     # For pane.dataframe
+    #     # For tabulator
+    # def export_csv(df):
     #     csv_object = BytesIO()
-    #     if fl_type == corpus_A_dropdown.value:
-    #         df = freq_A.object
-    #     if fl_type == corpus_B_dropdown.value:
-    #         df = freq_B.object
-    #     if fl_type == 'jux':
-    #         df = kw_pane.object
     #     if df.shape[0] == 0:
     #         return csv_object
     #     df.to_csv(csv_object, mode='w', index=False)
     #     csv_object.seek(0)
     #     return csv_object
 
-    download_A = pnw.FileDownload(callback=pn.bind(export_csv, freq_A), filename= corpus_A_dropdown.value + '_FreqTable.csv')
-    download_B = pnw.FileDownload(callback=pn.bind(export_csv, freq_B), filename= corpus_B_dropdown.value + '_FreqTable.csv')
-    download_KW = pnw.FileDownload(callback=pn.bind(export_csv, kw_pane), filename=corpus_A_dropdown.value + '_vs_' + corpus_B_dropdown.value + '_' + 'keyword_analysis.csv')
+    # download_A = pnw.FileDownload(callback=pn.bind(export_csv, freq_A), filename= corpus_A_dropdown.value + '_FreqTable.csv')
+    # download_B = pnw.FileDownload(callback=pn.bind(export_csv, freq_B), filename= corpus_B_dropdown.value + '_FreqTable.csv')
+    # download_KW = pnw.FileDownload(callback=pn.bind(export_csv, kw_pane), filename=corpus_A_dropdown.value + '_vs_' + corpus_B_dropdown.value + '_' + 'keyword_analysis.csv')
 
-    # download_A = pnw.FileDownload(callback=pn.bind(export_csv, corpus_A_dropdown.value), filename= corpus_A_dropdown.value + '_FreqTable.csv')
-    # download_B = pnw.FileDownload(callback=pn.bind(export_csv, corpus_B_dropdown.value), filename= corpus_B_dropdown.value + '_FreqTable.csv')
-    # download_KW = pnw.FileDownload(callback=pn.bind(export_csv, 'jux'), filename=corpus_A_dropdown.value + '_vs_' + corpus_B_dropdown.value + '_' + 'keyword_analysis.csv')
+    def export_csv(fl_type):
+        # For pane.dataframe
+        csv_object = BytesIO()
+        if fl_type == corpus_A_dropdown.value:
+            df = freq_A.object
+        if fl_type == corpus_B_dropdown.value:
+            df = freq_B.object
+        if fl_type == 'jux':
+            df = kw_pane.object
+        if df.shape[0] == 0:
+            return csv_object
+        df.to_csv(csv_object, mode='w', index=False)
+        csv_object.seek(0)
+        return csv_object
+
+    download_A = pnw.FileDownload(callback=pn.bind(export_csv, corpus_A_dropdown.value), filename= corpus_A_dropdown.value + '_FreqTable.csv')
+    download_B = pnw.FileDownload(callback=pn.bind(export_csv, corpus_B_dropdown.value), filename= corpus_B_dropdown.value + '_FreqTable.csv')
+    download_KW = pnw.FileDownload(callback=pn.bind(export_csv, 'jux'), filename=corpus_A_dropdown.value + '_vs_' + corpus_B_dropdown.value + '_' + 'keyword_analysis.csv')
         
 
     def refresh(event):
@@ -249,15 +248,15 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         wordcloud_Jux.object = display_jux_wordcloud(jux_error_img)
         jux_Legend.object = jux_legend()
         
-        freq_A.value = freq_dfs[corpus_A_dropdown.value]
-        freq_B.value = freq_dfs[corpus_B_dropdown.value]
-        # freq_A.object = freq_dfs[corpus_A_dropdown.value]
-        # freq_B.object = freq_dfs[corpus_B_dropdown.value]
+        # freq_A.value = freq_dfs[corpus_A_dropdown.value]
+        # freq_B.value = freq_dfs[corpus_B_dropdown.value]
+        freq_A.object = freq_dfs[corpus_A_dropdown.value]
+        freq_B.object = freq_dfs[corpus_B_dropdown.value]
         if method_dropdown.value == 'log_likelihood':
             download_KW.visible = True
             kw_pane.visible = True
-            # kw_pane.object = freq_dfs['kw_analysis']
-            kw_pane.value = freq_dfs['kw_analysis']
+            kw_pane.object = freq_dfs['kw_analysis']
+            # kw_pane.value = freq_dfs['kw_analysis']
         else:
             download_KW.visible = False
             kw_pane.visible = False
