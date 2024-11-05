@@ -73,12 +73,12 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     wordcloud_Jux = pn.pane.HoloViews()
     jux_Legend = pn.pane.Markdown(width=400)
     
-    freq_A = pnw.Tabulator(pd.DataFrame(), name='FreqList_Targ', height=350, width=330, show_index=False)
-    freq_B = pnw.Tabulator(pd.DataFrame(), name='FreqList_Ref', height=350, width=330, show_index=False)
-    kw_pane = pnw.Tabulator(pd.DataFrame(), name='KeywordAnalysis', height=350, width=850, visible=False, show_index=False, align="center")
-    # freq_A = pn.pane.DataFrame(pd.DataFrame(), name='FreqList_Targ', height=350, width=330, index=False)
-    # freq_B = pn.pane.DataFrame(pd.DataFrame(), name='FreqList_Ref', height=350, width=330, index=False)
-    # kw_pane = pn.pane.DataFrame(pd.DataFrame(), name='KeywordAnalysis', height=350, width=650, visible=False, index=False, header=True, align="start")
+    # freq_A = pnw.Tabulator(pd.DataFrame(), name='FreqList_Targ', height=350, width=330, show_index=False)
+    # freq_B = pnw.Tabulator(pd.DataFrame(), name='FreqList_Ref', height=350, width=330, show_index=False)
+    # kw_pane = pnw.Tabulator(pd.DataFrame(), name='KeywordAnalysis', height=350, width=850, visible=False, show_index=False, align="center")
+    freq_A = pn.pane.DataFrame(pd.DataFrame(), name='FreqList_Targ', height=350, width=330, index=False)
+    freq_B = pn.pane.DataFrame(pd.DataFrame(), name='FreqList_Ref', height=350, width=330, index=False)
+    kw_pane = pn.pane.DataFrame(pd.DataFrame(), name='KeywordAnalysis', height=350, width=650, visible=False, index=False, header=True, align="start")
 
 
     @pn.depends(corpus_A_dropdown.param.value, corpus_B_dropdown.param.value, method_dropdown.param.value, dtm_dropdown.param.value, watch=True)
