@@ -1,29 +1,18 @@
-from juxtorpus import Jux
-from wordcloud import WordCloud
-import holoviews as hv
-import matplotlib.pyplot as plt
-import numpy as np
-from tmtoolkit.bow.bow_stats import tfidf
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
-import panel.widgets as pnw
-import re
-from functools import partial
-from juxtorpus.viz.corpus import dtm2tfidf, _wordcloud
-
-#from atap_corpus_loader import CorpusLoader
-
-hv.extension('bokeh')
-
-
 # Visualising Jux
+from juxtorpus import Jux
 import panel as pn
 import panel.widgets as pnw
-from juxtorpus import Jux
-# from juxtorpus.viz.corpus import _wordcloud
-from wordcloud import WordCloud
 import holoviews as hv
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+import re
+from juxtorpus.viz.corpus import _wordcloud
+from io import BytesIO
+from tmtoolkit.bow.bow_stats import tfidf as bow_tfidf
+
+
 
 def corpus_freq_list(corpus, dtm_name='tokens', metric='tf', stopwords: list[str] = None):
     if not dtm_name in corpus.dtms.keys():
@@ -31,11 +20,14 @@ def corpus_freq_list(corpus, dtm_name='tokens', metric='tf', stopwords: list[str
     if stopwords is None: stopwords = list()
     dtm = corpus.dtms[dtm_name]
     with dtm.without_terms(stopwords) as dtm:
+        fl = dtm.freq_table()
         if metric == 'tfidf':
-            counter = dtm2tfidf(dtm)
+            tfidf_mat = bow_tfidf(dtm.matrix)
+            df = pd.DataFrame({'Count':fl, 'Freq':sum(tfidf_mat.toarray())})
         else:
-            counter = dtm.freq_table().to_dict()
-    counter = {k: v for k, v in sorted(counter.items(), key=lambda item: item[1], reverse=True)}
+            df = pd.DataFrame({'Count':fl, 'Freq':1_000*fl/dtm.total})
+    df = df.sort_values('Freq', ascending=False)
+    counter = df.Freq.to_dict()
     return counter
 
 def visualise_jux(corpora: dict, fixed_stopwords: list = []):
@@ -58,11 +50,13 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     exclude_words = fixed_stopwords
     global choice_No
     choice_No = 15
+    global freq_tables 
+    freq_dfs = dict()
     
     # Dropdown for Corpus selection
     corpus_list = list(corpora.keys())
-    corpus_A_dropdown = pnw.Select(name='Corpus_A', options=corpus_list, value=corpus_list[-2], width=210)
-    corpus_B_dropdown = pnw.Select(name='Corpus_B', options=corpus_list, value=corpus_list[-1], width=210)
+    corpus_A_dropdown = pnw.Select(name='Target_Corpus', options=corpus_list, value=corpus_list[-2], width=210)
+    corpus_B_dropdown = pnw.Select(name='Reference_Corpus', options=corpus_list, value=corpus_list[-1], width=210)
     
     method_dropdown = pnw.Select(name='Method', options=jux_methods, value=jux_methods[0], width=150)
     wordNo_input = pnw.IntInput(name='Word Number', value=100, step=10, start=30, end=150, width=90)
@@ -78,6 +72,14 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     wordcloud_B = pn.pane.HoloViews()
     wordcloud_Jux = pn.pane.HoloViews()
     jux_Legend = pn.pane.Markdown(width=400)
+    
+    # freq_A = pnw.Tabulator(pd.DataFrame(), name='FreqList_Targ', height=350, width=330, show_index=False)
+    # freq_B = pnw.Tabulator(pd.DataFrame(), name='FreqList_Ref', height=350, width=330, show_index=False)
+    # kw_pane = pnw.Tabulator(pd.DataFrame(), name='KeywordAnalysis', height=350, width=850, visible=False, show_index=False, align="center")
+    freq_A = pn.pane.DataFrame(pd.DataFrame(), name='FreqList_Targ', height=350, width=330, index=False)
+    freq_B = pn.pane.DataFrame(pd.DataFrame(), name='FreqList_Ref', height=350, width=330, index=False)
+    kw_pane = pn.pane.DataFrame(pd.DataFrame(), name='KeywordAnalysis', height=350, width=650, visible=False, index=False, header=True, align="start")
+
 
     @pn.depends(corpus_A_dropdown.param.value, corpus_B_dropdown.param.value, method_dropdown.param.value, dtm_dropdown.param.value, watch=True)
     def reset_choice(corpus_A_name, corpus_B_name, metric, dtm_name):
@@ -132,9 +134,9 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     # Function to generate a word cloud from a dictionary and convert it to an RGB image
     def generate_wordcloud_image(corpus, metric: str = 'tf', max_words: int = 50, dtm_name: str = 'tokens',
                 stopwords: list[str] = None):
-        wc = _wordcloud(corpus, metric = metric, max_words = max_words, dtm_name = dtm_name, stopwords = stopwords)
+        wc, wc_df = _wordcloud(corpus, metric = metric, max_words = max_words, dtm_name = dtm_name, stopwords = stopwords)
         plt.axis("off")
-        return np.array(wc.to_image())
+        return np.array(wc.to_image()), wc_df
 
     # Function to generate word clouds based on the Corpus selection
     def display_wordcloud(corpus_name):
@@ -144,14 +146,14 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         if selected_method not in ['tf', 'tfidf']: 
             selected_method = 'tf'
         # Generate word cloud images for selected Corpus
-        corpus_wc_image = generate_wordcloud_image(corpus, 
+        corpus_wc_image, freq_dfs[corpus_name] = generate_wordcloud_image(corpus, 
                                                   metric=selected_method, 
                                                   max_words=wordNo_input.value, 
                                                   dtm_name=dtm_dropdown.value, 
                                                   stopwords=exclude_words)
         # Create HoloViews elements for the word clouds
         corpus_wc = hv.RGB(corpus_wc_image).opts(
-            title=f'Corpus A: {corpora[corpus_name].name} -- {selected_method}', 
+            title=f'Corpus: {corpora[corpus_name].name} -- {selected_method}', 
             width=600, height=400,
             xaxis=None, yaxis=None)
         return corpus_wc
@@ -168,16 +170,21 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         else:
             try:
                 jux = Jux(corpora[corpus_a], corpora[corpus_b])
-                pwc = jux.polarity.wordcloud(metric=selected_method, top=selected_wordno, dtm_names=dtm_name, stopwords=exclude_words, return_wc=True)  # change this to 'tfidf' or 'log_likelihood'
+                pwc, kw_df = jux.polarity.wordcloud(metric=selected_method, top=selected_wordno, dtm_names=dtm_name, stopwords=exclude_words, return_wc=True)  # change this to 'tfidf' or 'log_likelihood'
+                if method_dropdown.value == 'log_likelihood':
+                    freq_dfs['kw_analysis'] = kw_df.drop(columns=['summed', 'polarity_div_summed'])
+                else:
+                    freq_dfs['kw_analysis'] = kw_df
                 # Create HoloViews elements for the word clouds
                 pwc_array = np.array(pwc.wc.to_image())
                 jux_cloud = hv.RGB(pwc_array).opts(
-                    title=f'Jux between Corpus "{corpus_a}" and Corpus "{corpus_b}" -- {selected_method}', 
+                    title=f'Jux between Target Corpus "{corpus_a}" and Reference Corpus "{corpus_b}" -- {selected_method}', 
                     width=800, height=500,
                     xaxis=None, yaxis=None)
             except ValueError:
                 jux_cloud = jux_error_img
-        return jux_cloud   
+                freq_dfs['kw_analysis'] = pd.DataFrame()
+        return jux_cloud
         
     # Define the Jux legend text
     def jux_legend():
@@ -192,8 +199,8 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
                     }
         legend_text = f"""
         <span style='font-size:18px;'>     
-        <span style='color:blue'>Blue Words</span>:  Corpus -- **{corpus_a_name}** <br>
-        <span style='color:red'>Red Words</span>: Corpus -- **{corpus_b_name}** <br>
+        <span style='color:blue'>Blue Words</span>:  Target Corpus -- **{corpus_a_name}** <br>
+        <span style='color:red'>Red Words</span>: Reference Corpus -- **{corpus_b_name}** <br>
         Size: {legend_texts[method]['size']} <br>
         Solid: {legend_texts[method]['solid']} <br>
         Translucent: {legend_texts[method]['translucent']}
@@ -201,22 +208,82 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         """
         return legend_text
 
+    #     # For tabulator
+    # def export_csv(df):
+    #     csv_object = BytesIO()
+    #     if df.shape[0] == 0:
+    #         return csv_object
+    #     df.to_csv(csv_object, mode='w', index=False)
+    #     csv_object.seek(0)
+    #     return csv_object
+
+    # download_A = pnw.FileDownload(callback=pn.bind(export_csv, freq_A), filename= corpus_A_dropdown.value + '_FreqTable.csv')
+    # download_B = pnw.FileDownload(callback=pn.bind(export_csv, freq_B), filename= corpus_B_dropdown.value + '_FreqTable.csv')
+    # download_KW = pnw.FileDownload(callback=pn.bind(export_csv, kw_pane), filename=corpus_A_dropdown.value + '_vs_' + corpus_B_dropdown.value + '_' + 'keyword_analysis.csv')
+
+    def export_csv(fl_type):
+        # For pane.dataframe
+        csv_object = BytesIO()
+        if fl_type == corpus_A_dropdown.value:
+            df = freq_A.object
+        if fl_type == corpus_B_dropdown.value:
+            df = freq_B.object
+        if fl_type == 'jux':
+            df = kw_pane.object
+        if df.shape[0] == 0:
+            return csv_object
+        df.to_csv(csv_object, mode='w', index=False)
+        csv_object.seek(0)
+        return csv_object
+
+    download_A = pnw.FileDownload(callback=pn.bind(export_csv, corpus_A_dropdown.value), filename= corpus_A_dropdown.value + '_FreqTable.csv')
+    download_B = pnw.FileDownload(callback=pn.bind(export_csv, corpus_B_dropdown.value), filename= corpus_B_dropdown.value + '_FreqTable.csv')
+    download_KW = pnw.FileDownload(callback=pn.bind(export_csv, 'jux'), filename=corpus_A_dropdown.value + '_vs_' + corpus_B_dropdown.value + '_' + 'keyword_analysis.csv')
+        
+
     def refresh(event):
         refresh_btn.disabled = True
         wordcloud_A.object = display_wordcloud(corpus_A_dropdown.value)
         wordcloud_B.object = display_wordcloud(corpus_B_dropdown.value)
         wordcloud_Jux.object = display_jux_wordcloud(jux_error_img)
         jux_Legend.object = jux_legend()
+        
+        # freq_A.value = freq_dfs[corpus_A_dropdown.value]
+        # freq_B.value = freq_dfs[corpus_B_dropdown.value]
+        freq_A.object = freq_dfs[corpus_A_dropdown.value]
+        freq_B.object = freq_dfs[corpus_B_dropdown.value]
+        if method_dropdown.value == 'log_likelihood':
+            download_KW.visible = True
+            kw_pane.visible = True
+            kw_pane.object = freq_dfs['kw_analysis']
+            # kw_pane.value = freq_dfs['kw_analysis']
+        else:
+            download_KW.visible = False
+            kw_pane.visible = False
         refresh_btn.disabled = False
 
     refresh_btn.on_click(refresh)
-    refresh(True)
+    
 
     # Set initial values for dtm dropdown
     update_dtm_dropdown(corpus_A_dropdown.value, corpus_B_dropdown.value)
     update_stopwords(excl_choice)
     reset_choice(corpus_A_dropdown.value, corpus_B_dropdown.value, method_dropdown.value, dtm_dropdown.value)
 
+    refresh(True)
+
+    # Layouts
+    wordclouds = pn.Column(pn.Row(wordcloud_A, wordcloud_B), 
+                    pn.Row(wordcloud_Jux, jux_Legend))
+
+    freq_tables = pn.Column(
+                    pn.Row(
+                        pn.Row(freq_A, freq_B), 
+                        pn.Column(pn.Row(download_A, download_B), 
+                              download_KW)
+                    ),
+                    kw_pane
+                   )
 
     # Combine everything into a dashboard
     layout = pn.Column(pn.Row(
@@ -224,13 +291,36 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
                         pn.layout.Divider(),
                         pn.Column(excl_input, refresh_btn), 
                         excl_choice),
-                    pn.Row(wordcloud_A, wordcloud_B), 
-                    pn.Row(wordcloud_Jux, jux_Legend)
+                    pn.Tabs(
+                        ("Visualisation", wordclouds),   # Tab for display the wordcloud visuals
+                        ("Export Data", freq_tables)   # Tab for showing the frequency tables and export
+                        )
                     )
-    return layout.servable()
+                   
+    return layout
+
+# Functions for Freq_list display and downloads
+
+# # Recursive function to search through the layout for a widget by its type and name
+# def find_widget_by_name(root, widget_name):
+#     if root.name == widget_name:
+#         return root
+#     if isinstance(root, (pn.layout.Panel, list)):  # Check if it's a container
+#         for component in root:
+#             result = find_widget_by_name(component, widget_name)
+#             if result is not None:
+#                 print(result.value)
+#                 return result
+#     return None
+
+# def find_widget_value_by_name(root, widget_name):
+#     widget =  find_widget_by_name(root, widget_name)
+#     if widget:
+#         return widget.value
+#     else:
+#         return None
 
 # Semtag needed functions
-
 def load_usas_dict(usas_def_file):
     # get usas_tags definition
     #usas_def_file = './documents/semtags_subcategories.txt'
