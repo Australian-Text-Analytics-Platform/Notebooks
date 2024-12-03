@@ -10,5 +10,5 @@ Guides for using these tools can be found from the linked individual Github repo
 
 The following notebooks are available to test on ATAP Binderhub, a valid Australian Access Federation login is needed:
 
-**Juxtorpus**: [![Binder](https://binderhub.atap-binder.cloud.edu.au/badge_logo.svg)](https://binderhub.atap-binder.cloud.edu.au/v2/gh/Australian-Text-Analytics-Platform/Notebooks/Juxtorpus?labpath=Juxtorpus-Demo.ipynb)
+**Juxtorpus**: [![Binder](https://binderhub.atap-binder.cloud.edu.au/badge_logo.svg)](https://binderhub.atap-binder.cloud.edu.au/v2/gh/Australian-Text-Analytics-Platform/Notebooks/Juxtorpus-v0.3.0?labpath=Juxtorpus-Demo.ipynb)
 
