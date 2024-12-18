@@ -1,0 +1,28 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Juxtorpus
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Chao
+    name-particle: Dr
+    family-names: Sun
+    email: chao.sun@sydney.edu.au
+    affiliation: Sydney Informatics Hub
+  - given-names: Hamish
+    family-names: Croser
+    email: hamish.croser@sydney.edu.au
+    affiliation: Australian Text Analytics Platform
+  - given-names: Jack
+    family-names: Chan
+    email: huen.chan@sydney.edu.au
+    affiliation: Australian Text Analytics Platform
+repository-code: >-
+  https://github.com/Australian-Text-Analytics-Platform/Notebooks
+license: MIT
+version: Juxtorpus-v0.3.1
+date-released: '2024-12-17'
