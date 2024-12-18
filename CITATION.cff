@@ -2,14 +2,13 @@
 # Visit https://bit.ly/cffinit to generate yours today!
 
 cff-version: 1.2.0
-title: Juxtorpus
+title: ATAP Juxtorpus Demo Notebook
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
 type: software
 authors:
   - given-names: Chao
-    name-particle: Dr
     family-names: Sun
     email: chao.sun@sydney.edu.au
     affiliation: Sydney Informatics Hub
