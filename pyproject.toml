@@ -2,7 +2,7 @@
 name = "notebooks"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Chao Sun <chao.sun@sydney.edu.au>", "Hamish Croser <hamish.croser@sydney.edu.au>"]
 readme = "README.md"
 package-mode = false
 
