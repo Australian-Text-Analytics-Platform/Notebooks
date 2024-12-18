@@ -78,7 +78,7 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
     # kw_pane = pnw.Tabulator(pd.DataFrame(), name='KeywordAnalysis', height=350, width=850, visible=False, show_index=False, align="center")
     freq_A = pn.pane.DataFrame(pd.DataFrame(), name='FreqList_Targ', height=350, width=330, index=False)
     freq_B = pn.pane.DataFrame(pd.DataFrame(), name='FreqList_Ref', height=350, width=330, index=False)
-    kw_pane = pn.pane.DataFrame(pd.DataFrame(), name='KeywordAnalysis', height=350, width=550, visible=False, index=False, header=True, align="center")
+    kw_pane = pn.pane.DataFrame(pd.DataFrame(), name='KeywordAnalysis', height=350, width=650, visible=False, index=False, header=True, align="start")
 
 
     @pn.depends(corpus_A_dropdown.param.value, corpus_B_dropdown.param.value, method_dropdown.param.value, dtm_dropdown.param.value, watch=True)
@@ -208,15 +208,18 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         """
         return legend_text
 
-
-    # def export_csv(df):
     #     # For tabulator
+    # def export_csv(df):
     #     csv_object = BytesIO()
     #     if df.shape[0] == 0:
     #         return csv_object
     #     df.to_csv(csv_object, mode='w', index=False)
     #     csv_object.seek(0)
     #     return csv_object
+
+    # download_A = pnw.FileDownload(callback=pn.bind(export_csv, freq_A), filename= corpus_A_dropdown.value + '_FreqTable.csv')
+    # download_B = pnw.FileDownload(callback=pn.bind(export_csv, freq_B), filename= corpus_B_dropdown.value + '_FreqTable.csv')
+    # download_KW = pnw.FileDownload(callback=pn.bind(export_csv, kw_pane), filename=corpus_A_dropdown.value + '_vs_' + corpus_B_dropdown.value + '_' + 'keyword_analysis.csv')
 
     def export_csv(fl_type):
         # For pane.dataframe
@@ -232,10 +235,6 @@ def visualise_jux(corpora: dict, fixed_stopwords: list = []):
         df.to_csv(csv_object, mode='w', index=False)
         csv_object.seek(0)
         return csv_object
-
-    # download_A = pnw.FileDownload(callback=pn.bind(export_csv, freq_A), filename= corpus_A_dropdown.value + '_FreqTable.csv')
-    # download_B = pnw.FileDownload(callback=pn.bind(export_csv, freq_B), filename= corpus_B_dropdown.value + '_FreqTable.csv')
-    # download_KW = pnw.FileDownload(callback=pn.bind(export_csv, kw_pane), filename=corpus_A_dropdown.value + '_vs_' + corpus_B_dropdown.value + '_' + 'keyword_analysis.csv')
 
     download_A = pnw.FileDownload(callback=pn.bind(export_csv, corpus_A_dropdown.value), filename= corpus_A_dropdown.value + '_FreqTable.csv')
     download_B = pnw.FileDownload(callback=pn.bind(export_csv, corpus_B_dropdown.value), filename= corpus_B_dropdown.value + '_FreqTable.csv')
