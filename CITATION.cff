@@ -22,7 +22,7 @@ authors:
     email: huen.chan@sydney.edu.au
     affiliation: Australian Text Analytics Platform
 repository-code: >-
-  https://github.com/Australian-Text-Analytics-Platform/Notebooks
+  https://github.com/Australian-Text-Analytics-Platform/Notebooks/tree/Juxtorpus
 license: MIT
 version: Juxtorpus-v0.3.1
 date-released: '2024-12-17'
