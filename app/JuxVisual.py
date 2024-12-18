@@ -19,13 +19,13 @@ def corpus_freq_list(corpus, dtm_name='tokens', metric='tf', stopwords: list[str
         raise ValueError(f"DTM {dtm_name} does not exist. Must be one of {', '.join(corpus.dtms.keys())}.")
     if stopwords is None: stopwords = list()
     dtm = corpus.dtms[dtm_name]
-    with dtm.without_terms(stopwords) as dtm:
-        fl = dtm.freq_table()
-        if metric == 'tfidf':
-            tfidf_mat = bow_tfidf(dtm.matrix)
-            df = pd.DataFrame({'Count':fl, 'Freq':sum(tfidf_mat.toarray())})
-        else:
-            df = pd.DataFrame({'Count':fl, 'Freq':1_000*fl/dtm.total})
+    fl = dtm.freq_table()
+    if metric == 'tfidf':
+        tfidf_mat = bow_tfidf(dtm.matrix)
+        df = pd.DataFrame({'Count': fl, 'Freq': sum(tfidf_mat.toarray())})
+    else:
+        df = pd.DataFrame({'Count': fl, 'Freq': 1_000 * fl / dtm.total})
+    df = df[~df.index.isin(stopwords)]
     df = df.sort_values('Freq', ascending=False)
     counter = df.Freq.to_dict()
     return counter

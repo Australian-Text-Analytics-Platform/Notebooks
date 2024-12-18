@@ -9,7 +9,7 @@ package-mode = false
 [tool.poetry.dependencies]
 python = ">=3.10.0,<3.12.0"
 atap-corpus-timeline = "~0.2.0"
-juxtorpus = ">=0.3.1"
+juxtorpus = ">=0.3.2"
 holoviews = ">=1.19.0,<1.20.0"
 
 [tool.poetry.group.dev.dependencies]
