@@ -8,9 +8,8 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.10.0,<3.12.0"
+atap-corpus-timeline = "~0.2.0"
 juxtorpus = ">=0.3.1"
-atap-corpus-slicer = ">=0.3.5,<0.4.0"
-atap-corpus-loader = ">=1.8.2,<1.9.0"
 holoviews = ">=1.19.0,<1.20.0"
 
 [tool.poetry.group.dev.dependencies]
