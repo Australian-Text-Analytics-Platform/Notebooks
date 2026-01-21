@@ -8,7 +8,7 @@ Most notebooks in this repository use the common ATAP [Corpus Loader](https://gi
 
 Guides for using these tools can be found from the linked individual Github repos.
 
-The following notebooks are available to test on ATAP Binderhub, a valid Australian Access Federation login is needed:
+The following notebooks are available to test on ARDC Binderhub, a valid Australian Access Federation login is needed:
 
-**Juxtorpus**: [![Binder](https://binderhub.atap-binder.cloud.edu.au/badge_logo.svg)](https://binderhub.atap-binder.cloud.edu.au/v2/gh/Australian-Text-Analytics-Platform/Notebooks/Juxtorpus-v0.3.0?labpath=Juxtorpus-Demo.ipynb)
+**Juxtorpus**: [![Binder](https://binderhub.rc.nectar.org.au/badge_logo.svg)](https://binderhub.rc.nectar.org.au/v2/gh/Australian-Text-Analytics-Platform/Notebooks/Juxtorpus-v0.3.0?labpath=Juxtorpus-Demo.ipynb)
 
